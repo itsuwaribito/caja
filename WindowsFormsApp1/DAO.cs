@@ -7,19 +7,10 @@ using Newtonsoft.Json;
 
 namespace WindowsFormsApp1
 {
-    public class Articulo
-    {
-        public string Descipcion { get; set; }
-        public decimal Precio { get; set; }
-        public int Cantidad { get; set; }
-
-        // Propiedad de solo lectura que calcula el Importe automáticamente
-        public decimal Importe => Precio * Cantidad;
-    }
     class DAO
     {
         
-        private string  baseURL = "C:\\base de datos\\Catalogo Truper.xlsx";
+        private string  baseURL = "C:\\base de datos\\Catalogo Truper 2024.xlsx";
         private string  baseDB = "C:\\base de datos\\DB.json";
 
         public Dictionary<string,string> Show(string codigo)
@@ -44,6 +35,7 @@ namespace WindowsFormsApp1
             catch (Exception ex)
             {
                 Console.WriteLine($"Error al leer el archivo JSON: {ex.Message}");
+                return null;
             }
             return null;
         }
@@ -56,7 +48,7 @@ namespace WindowsFormsApp1
                 Console.WriteLine("El archivo Excel no existe.");
                 return;
             }
-                // Crear una nueva instancia de ExcelPackage
+            // Crear una nueva instancia de ExcelPackage
             using (var package = new ExcelPackage(new FileInfo(baseURL)))
             {
                 // Obtener la hoja de trabajo (worksheet) por su nombre
@@ -69,17 +61,17 @@ namespace WindowsFormsApp1
 
                 // Crear una lista para almacenar los datos
                 var data = new System.Collections.Generic.List<ExpandoObject>();
-
+                Console.WriteLine("Filas del Excel: " + rowCount);
                 // Iterar a través de las filas y columnas y almacenar los datos en la lista
-                for (int row = 1; row <= rowCount; row++)
+                for (int row = 2; row <= rowCount; row++)
                 {
-                    if (row == 1)
+                    if (worksheet.Cells[row, 1].Text == "")
                     {
                         continue;
                     }
                     //var rowData = new System.Collections.Generic.Dictionary<string, object>();
                     // Crear un objeto dinámico usando ExpandoObject
-                        
+
                     dynamic dynamicObject = new ExpandoObject();
 
                     dynamicObject.Codigo = worksheet.Cells[row, 1].Text;
