@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Drawing.Printing;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace WindowsFormsApp1
 {
@@ -21,17 +22,44 @@ namespace WindowsFormsApp1
 
         private void button2_Click(object sender, EventArgs e)
         {
+            /*
             PrinterSettings.StringCollection impresoras = PrinterSettings.InstalledPrinters;
 
             // Imprime la lista de impresoras instaladas
             Console.WriteLine("Impresoras instaladas:");
+            string nombreImpresora = "XP-58 (copy 2)";
             foreach (string impresora in impresoras)
             {
-                Console.WriteLine(impresora);
+                // Verificar si la cadena comienza con "px-58"
+                bool comienzaConPx58 = impresora.StartsWith("XP-58");
+
+                // Mostrar el resultado
+                if (comienzaConPx58)
+                {
+                    nombreImpresora = impresora;
+                    break;
+                    //MessageBox.Show($"Impresora seleccionada: \"{nombreImpresora }\" ", "Alerta", MessageBoxButtons.OK);
+                }
+            }
+            */
+
+            // Crear el diálogo de impresora
+            PrintDialog printDialog = new PrintDialog();
+            string nombreImpresora = "XP-58";
+
+            // Mostrar el diálogo de impresora
+            if (printDialog.ShowDialog() == DialogResult.OK)
+            {
+                // Obtener la impresora seleccionada
+                PrinterSettings printerSettings = printDialog.PrinterSettings;
+                nombreImpresora = printerSettings.PrinterName;
+
+                // Realizar acciones con la impresora seleccionada
+                Console.WriteLine("Impresora seleccionada: " + nombreImpresora);
             }
 
             // Puedes seleccionar la impresora por su nombre
-            string nombreImpresora = "XP-58";
+
 
             // Configura la impresora seleccionada
             PrinterSettings ps = new PrinterSettings();
@@ -41,6 +69,7 @@ namespace WindowsFormsApp1
             pd.PrintPage += new PrintPageEventHandler(ImprimirTicket);
             pd.PrinterSettings = ps;
             pd.Print();
+            ((Control)sender).Parent.Focus();
         }
 
         private void ImprimirTicket(object sender, PrintPageEventArgs e)
@@ -100,7 +129,7 @@ namespace WindowsFormsApp1
             DAO archivo = new DAO();
             Dictionary<string, string> response = archivo.Show(textBox1.Text);
             articulo.Fill(response);
-                
+            ((Control)sender).Parent.Focus();
         }
         private void AgregarATabla_Click(object sender, EventArgs e)
         {
@@ -115,6 +144,7 @@ namespace WindowsFormsApp1
                 textBox3.Text = "1";
                 textBox4.Text = string.Empty;
             }
+            ((Control)sender).Parent.Focus();
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
@@ -177,14 +207,21 @@ namespace WindowsFormsApp1
             }
             else
             {
-                if(textBox2.Text.Length > 0)
+                
+                if (textBox2.Text.Length > 0)
                 {
                     AgregaArticuloATabla();
                     textBox3.Text = "1";
                 }
                 // Procesar la cadena acumulada al presionar Enter
                 DAO DB_archivo = new DAO();
-                articulo.Fill(DB_archivo.Show(textBox1.Text));
+                Dictionary<string, string>  fila = DB_archivo.Show(inputBuffer);
+                if(fila == null)
+                {
+                    return;
+                }
+                
+                articulo.Fill(fila);
                 textBox2.Text = articulo.Nombre;
                 textBox3.Text = articulo.Cantidad.ToString();
                 textBox4.Text = articulo.Precio.ToString();
@@ -240,6 +277,7 @@ namespace WindowsFormsApp1
             total = 0.0m;
             lbl_total.Text = "0.00";
             CalculaCambio();
+            ((Control)sender).Parent.Focus();
         }
 
 
@@ -303,29 +341,42 @@ namespace WindowsFormsApp1
             string ruta = "C:\\base de datos\\";
             try
             {
-                // Verificar si la ruta existe
-                if (System.IO.Directory.Exists(ruta))
+                // Verificar si el directorio existe
+                if (!Directory.Exists(ruta))
                 {
-                    // Ejecutar el comando para abrir el Explorador de archivos en la ubicación especificada
-                    Process.Start("explorer.exe", ruta);
+                    // Crear el directorio si no existe
+                    Directory.CreateDirectory(ruta);
+                    Console.WriteLine($"Directorio creado en: {ruta}");
                 }
-                else
-                {
-                    // Informar al usuario que la ruta no existe
-                    MessageBox.Show("La ruta no existe.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                Process.Start("explorer.exe", ruta);
             }
             catch (Exception ex)
             {
                 // Manejar excepciones, si es necesario
-                Console.WriteLine("Error al abrir el Explorador de archivos: " + ex.Message);
+                MessageBox.Show($"No se pudo crear el directorio: \"{ruta}\"", "Error", MessageBoxButtons.OK);
             }
+            ((Control)sender).Parent.Focus();
         }
 
         private void button6_Click(object sender, EventArgs e)
         {
             DAO archivo = new DAO();
             archivo.Leer();
+            ((Control)sender).Parent.Focus();
+        }
+
+        private void textBox1_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Verificar si la tecla presionada es Enter
+            if (e.KeyCode == Keys.Enter)
+            {
+                
+                DAO archivo = new DAO();
+                Dictionary<string, string> response = archivo.Show(textBox1.Text);
+                articulo.Fill(response);
+                
+                ((Control)sender).Parent.Focus();
+            }
         }
     }
 }

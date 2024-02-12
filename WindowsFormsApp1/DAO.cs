@@ -3,15 +3,17 @@ using System.IO;
 using OfficeOpenXml;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Diagnostics;
 using Newtonsoft.Json;
+using System.Windows.Forms;
 
 namespace WindowsFormsApp1
 {
     class DAO
     {
-        
-        private string  baseURL = "C:\\base de datos\\Catalogo Truper 2024.xlsx";
-        private string  baseDB = "C:\\base de datos\\DB.json";
+        private string nombreArchivo = "Catalogo Truper.xlsx";
+        private string baseURL = "C:\\base de datos";
+        private string baseDB = "C:\\base de datos\\DB.json";
 
         public Dictionary<string,string> Show(string codigo)
         {
@@ -42,22 +44,41 @@ namespace WindowsFormsApp1
 
         public void Leer()
         {
-            // Verificar si el archivo existe
-            if (!File.Exists(baseURL))
+            List<int> filas = new List<int>();
+            // Verificar si el directorio existe
+            if (!Directory.Exists(baseURL))
             {
-                Console.WriteLine("El archivo Excel no existe.");
+                // Crear el directorio si no existe
+                Directory.CreateDirectory(baseURL);
+                Console.WriteLine($"Directorio creado en: {baseURL}");
+            }
+
+            // Verificar si el archivo existe
+            
+            else if (!File.Exists($"{baseURL}\\{nombreArchivo}"))
+            {
+                MessageBox.Show($"El archivo con nombre \"{nombreArchivo}\" no existe", "Error", MessageBoxButtons.OK);
                 return;
             }
             // Crear una nueva instancia de ExcelPackage
-            using (var package = new ExcelPackage(new FileInfo(baseURL)))
+            using (var package = new ExcelPackage(new FileInfo($"{baseURL}\\{nombreArchivo}")))
             {
                 // Obtener la hoja de trabajo (worksheet) por su nombre
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                ExcelWorksheet worksheet = package.Workbook.Worksheets["cat"];
-
-                // Obtener el número de filas y columnas en la hoja de trabajo
-                int rowCount = worksheet.Dimension.Rows;
-                int colCount = worksheet.Dimension.Columns;
+                ExcelWorksheet worksheet = package.Workbook.Worksheets["catalogo"];
+                int rowCount, colCount;
+                
+                try
+                {
+                    // Obtener el número de filas y columnas en la hoja de trabajo
+                    rowCount = worksheet.Dimension.Rows;
+                    colCount = worksheet.Dimension.Columns;
+                    
+                }catch (Exception ex)
+                {
+                    MessageBox.Show("No se encontro la hoja con el nombre: \"catalogo\"\nO no se puede leer la informacion correctamente", "Error", MessageBoxButtons.OK);
+                    return;
+                }
 
                 // Crear una lista para almacenar los datos
                 var data = new System.Collections.Generic.List<ExpandoObject>();
@@ -67,6 +88,7 @@ namespace WindowsFormsApp1
                 {
                     if (worksheet.Cells[row, 1].Text == "")
                     {
+                        filas.Add(row);
                         continue;
                     }
                     //var rowData = new System.Collections.Generic.Dictionary<string, object>();
@@ -87,10 +109,16 @@ namespace WindowsFormsApp1
 
                 // Convertir la lista a una cadena JSON
                 string jsonString = JsonConvert.SerializeObject(data);
+                
+                if(filas.Count > 0)
+                {
+                    string listado = string.Join(", ", filas);
+                    MessageBox.Show($"Se omitieron las filas {listado}", "Alerta", MessageBoxButtons.OK);
 
+                }
                 // Escribir la cadena JSON en un archivo
                 File.WriteAllText(baseDB, jsonString);
-
+                MessageBox.Show("La base de datos ha sido actualizada", "Exito", MessageBoxButtons.OK);
                 Console.WriteLine($"El contenido del archivo Excel se ha guardado en un archivo JSON en: {baseDB}");
             }
         }
